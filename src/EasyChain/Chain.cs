@@ -4,13 +4,11 @@ using System.Threading.Tasks;
 
 namespace EasyChain;
 
-internal class Chain<TMessage>(IServiceProvider serviceProvider, Func<IServiceScope, Func<TMessage, Task>> begin) : IChain<TMessage>
+internal class Chain<TMessage>(IServiceProvider serviceProvider, Func<IServiceScope, TMessage, Task> begin) : IChain<TMessage>
 {
     public async Task Run(TMessage message)
     {
-        using (var scope = serviceProvider.CreateScope())
-        {
-            await begin(scope).Invoke(message);
-        }
+        using var scope = serviceProvider.CreateScope();
+        await begin(scope, message);
     }
 }

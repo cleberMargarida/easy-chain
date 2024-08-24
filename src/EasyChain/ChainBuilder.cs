@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -15,10 +14,6 @@ internal static class ChainBuilder
     public static Chain<TMessage> Build<TBuilder, TMessage>(this TBuilder _, IServiceProvider services, ChainConfig<TMessage> config)
         where TBuilder : class, IChainBuilder, new()
     {
-        // Create factories to generate IHandler<TMessage> instances using IServiceScope
-        var handlerFactories = config.ChainTypes.Select<Type, Func<IServiceScope, IHandler<TMessage>>>(
-            static t => s => (IHandler<TMessage>)s.ServiceProvider.GetService(t));
-
         // Define the parameter expression representing the message passed to the chain
         ParameterExpression messageParam = Expression.Parameter(typeof(TMessage));
 
@@ -26,37 +21,29 @@ internal static class ChainBuilder
         ChainHandling<TMessage> lastInvocation = _ => Task.CompletedTask;
 
         // Start with the base delegate and call expression
-        var callExpression = Expression.Call(Expression.Constant(lastInvocation.Target), lastInvocation.Method, messageParam);
+        MethodCallExpression callExpression = Expression.Call(Expression.Constant(lastInvocation.Target), lastInvocation.Method, messageParam);
 
         // Define a variable expression for the IServiceScope parameter
         Expression scopeParam = Expression.Variable(typeof(IServiceScope));
 
         // Get the method info for IHandler<TMessage>.Handle
-        MethodInfo handleMethod = typeof(IHandler<TMessage>)
-            .GetMethod(nameof(IHandler<TMessage>.Handle), BindingFlags.Public | BindingFlags.Instance)
-            ?? throw new NullReferenceException("Handle method not found on IHandler<TMessage>");
+        MethodInfo handleMethod = typeof(IHandler<TMessage>).GetMethod(nameof(IHandler<TMessage>.Handle), BindingFlags.Public | BindingFlags.Instance)!;
 
         // Iterate over handler factories to build the chain of responsibility
-        foreach (Func<IServiceScope, IHandler<TMessage>> handlerFactory in handlerFactories)
+        foreach (var type in config.ChainTypes)
         {
-            // TODO: instead of pass a factory call expression we can pass a parameter and replace the parameter rewriting the expression
-            // To where is a parameter we change to the service instance as we do for IServiceScope.
-
-            // Create an expression to call the handler factory method with the scope parameter
-            var handlerExpression = Expression.Call(Expression.Constant(handlerFactory.Target), handlerFactory.Method, scopeParam);
-
             // Create an expression for the next invocation in the chain
             var nextInvocation = Expression.Lambda<ChainHandling<TMessage>>(callExpression, messageParam).Reduce();
 
             // Build the call to IHandler<TMessage>.Handle with the current handler, message parameter, and next invocation
-            callExpression = Expression.Call(handlerExpression, handleMethod, messageParam, nextInvocation);
+            callExpression = Expression.Call(Expression.Parameter(type), handleMethod, messageParam, nextInvocation);
         }
 
         // Compile the final expression into a delegate
-        var finalExpressionTree = Expression.Lambda<Func<TMessage, Task>>(callExpression, messageParam);
+        var tree = Expression.Lambda<Func<TMessage, Task>>(callExpression, messageParam);
 
         // Return a new Chain<TMessage> that uses the compiled delegate
-        return new Chain<TMessage>(services, s => message => finalExpressionTree.Rewrite(s).Compile().Invoke(message));
+        return new Chain<TMessage>(services, (s, m) => tree.Rewrite(s).Compile()(m));
     }
 
     // Rewrites the expression tree, injecting the IServiceScope into the expression
@@ -66,17 +53,16 @@ internal static class ChainBuilder
     }
 }
 
-// This class rewrites an expression tree, replacing parameters of type IServiceScope with a constant
 internal sealed class ChainExpressionRewriter : ExpressionVisitor
 {
-    private Expression _constant = default!;
+    private IServiceProvider _services = default!;
 
     /// <summary>
     /// Visit parameters and replace IServiceScope parameters with a constant expression
     /// </summary>
     protected override Expression VisitParameter(ParameterExpression node)
     {
-        return node.Type == typeof(IServiceScope) ? _constant : base.VisitParameter(node);
+        return typeof(IHandler).IsAssignableFrom(node.Type) ? Expression.Constant(_services.GetService(node.Type)) : base.VisitParameter(node);
     }
 
     /// <summary>
@@ -84,7 +70,7 @@ internal sealed class ChainExpressionRewriter : ExpressionVisitor
     /// </summary>
     internal Expression<Func<TInput, TOutput>> Rewrite<TInput, TOutput>(Expression<Func<TInput, TOutput>> expression, IServiceScope scope)
     {
-        _constant = Expression.Constant(scope);
+        _services = scope.ServiceProvider;
         return (Expression<Func<TInput, TOutput>>)Visit(expression);
     }
 }

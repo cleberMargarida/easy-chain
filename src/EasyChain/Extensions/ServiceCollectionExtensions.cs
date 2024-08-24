@@ -1,4 +1,5 @@
 ﻿using EasyChain;
+using EasyChain.Extensions;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Linq;
