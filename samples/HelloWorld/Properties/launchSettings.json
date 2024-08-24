@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "HelloWorld": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

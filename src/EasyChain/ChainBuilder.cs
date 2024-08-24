@@ -39,6 +39,9 @@ internal static class ChainBuilder
         // Iterate over handler factories to build the chain of responsibility
         foreach (Func<IServiceScope, IHandler<TMessage>> handlerFactory in handlerFactories)
         {
+            // TODO: instead of pass a factory call expression we can pass a parameter and replace the parameter rewriting the expression
+            // To where is a parameter we change to the service instance as we do for IServiceScope.
+
             // Create an expression to call the handler factory method with the scope parameter
             var handlerExpression = Expression.Call(Expression.Constant(handlerFactory.Target), handlerFactory.Method, scopeParam);
 
@@ -59,12 +62,12 @@ internal static class ChainBuilder
     // Rewrites the expression tree, injecting the IServiceScope into the expression
     private static Expression<Func<TMessage, Task>> Rewrite<TMessage>(this Expression<Func<TMessage, Task>> tree, IServiceScope scope)
     {
-        return new ServiceScopeParameterRewriter().Rewrite(tree, scope);
+        return new ChainExpressionRewriter().Rewrite(tree, scope);
     }
 }
 
 // This class rewrites an expression tree, replacing parameters of type IServiceScope with a constant
-internal sealed class ServiceScopeParameterRewriter : ExpressionVisitor
+internal sealed class ChainExpressionRewriter : ExpressionVisitor
 {
     private Expression _constant = default!;
 

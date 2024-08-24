@@ -5,9 +5,10 @@ namespace EasyChain
 {
     internal class ChainConfig<TMessage> : IChainConfig<TMessage>
     {
-        public void Add<THandler>() where THandler : IHandler<TMessage>
+        public IChainConfig<TMessage> Add<THandler>() where THandler : IHandler<TMessage>
         {
             ChainTypes.Push(typeof(THandler));
+            return this;
         }
 
         /// <summary>

@@ -12,5 +12,5 @@ public interface IChainConfig<T>
     /// </summary>
     /// <typeparam name="THandler">The type of the handler to add to the chain. Must implement <see cref="IHandler{T}"/>.</typeparam>
 
-    void Add<THandler>() where THandler : IHandler<T>;
+    IChainConfig<T> Add<THandler>() where THandler : IHandler<T>;
 }

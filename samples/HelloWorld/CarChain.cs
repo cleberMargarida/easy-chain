@@ -1,6 +1,6 @@
 ﻿using EasyChain;
 
-internal class CarResponsibilityChainBuilder : IChainBuilder<Car>
+internal class CarChain : IChainBuilder<Car>
 {
     public void Configure(IChainConfig<Car> callChain)
     {
