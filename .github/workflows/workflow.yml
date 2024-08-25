@@ -1,66 +1,52 @@
-name: .NET Build, Test, and Coverage
+name: Build-deploy pipeline
 
 on:
   push:
     branches:
       - master
+    paths-ignore:
+      - ".github/**"
   pull_request:
     branches:
       - master
 
 jobs:
   build:
+    name: Build-push image
+    permissions:
+      contents: "read"
+      id-token: "write"
+      pull-requests: write
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '8.0.x'  # Specify your .NET version
+      - name: Docker compose build
+        run: docker compose build
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Run tests
+        run: docker compose up --exit-code-from tests tests
 
-    - name: Build solution
-      run: dotnet build --no-restore --configuration Debug
+      - name: Write to Job Summary unit tests results
+        run: cat tests-results/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
 
-    - name: Run tests with coverage
-      run: dotnet test --no-build --configuration Debug --collect:"XPlat Code Coverage"
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: tests-results/Cobertura.xml
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: "40 80"
 
-    - name: Install ReportGenerator
-      run: dotnet tool install --global dotnet-reportgenerator-globaltool
-
-    - name: Add .NET tools to PATH
-      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
-    - name: Generate coverage reports
-      run: |
-        reportgenerator -reports:**/coverage.cobertura.xml -targetdir:CoverageReport -reporttypes:Html Cobertura
-
-    - name: List coverage report directory
-      run: ls -la CoverageReport
-
-    - name: Validate coverage
-      run: |
-        COVERAGE_THRESHOLD=80
-        COVERAGE=$(grep -Po 'line-rate="\K[0-9]+\.[0-9]+' CoverageReport/Cobertura.xml)
-        if [ -z "$COVERAGE" ]; then
-          echo "Coverage report not found or is empty."
-          exit 1
-        fi
-        COVERAGE_INT=${COVERAGE%%.*}
-        if [ "$COVERAGE_INT" -lt "$COVERAGE_THRESHOLD" ]; then
-          echo "Code coverage ($COVERAGE%) is below the threshold ($COVERAGE_THRESHOLD%)"
-          exit 1
-        else
-          echo "Code coverage ($COVERAGE%) meets the threshold ($COVERAGE_THRESHOLD%)"
-        fi
-
-    - name: Upload coverage report
-      uses: actions/upload-artifact@v3
-      with:
-        name: code-coverage-report
-        path: CoverageReport
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          recreate: true
+          path: code-coverage-results.md
