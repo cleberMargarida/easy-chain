@@ -38,7 +38,7 @@ jobs:
 
     - name: Generate coverage reports
       run: |
-        reportgenerator -reports:**/coverage.cobertura.xml -targetdir:CoverageReport -reporttypes:Html;Cobertura
+        reportgenerator -reports:**/coverage.cobertura.xml -targetdir:CoverageReport -reporttypes:Html,Cobertura
 
     - name: Validate coverage
       run: |
