@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  builder:
+    build:
+      context: .
+      target: build
+  tests:
+    build:
+      context: .
+      target: build
+    volumes:
+      - ./tests-results:/app/tests/test-results
+    command: 
+      sh -c 
+      "dotnet test
+        -c Release
+        --logger 'trx;LogFilePrefix=/app/tests/test-results/'
+        /p:CollectCoverage=true
+        /p:CoverletOutputFormat=cobertura
+        /p:Exclude='[EasyChain.TestsShared]*%2c[EasyChain.*.Tests]*' ;
+      reportgenerator
+        '-reports:/app/tests/GigPay.Core.*/coverage.cobertura.xml'
+        '-targetdir:/app/tests/test-results' 
+        '-reporttypes:Cobertura;MarkdownSummaryGithub'"
+    depends_on:
+      - builder
