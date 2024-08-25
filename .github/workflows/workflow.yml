@@ -22,11 +22,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Docker compose build
-        run: docker compose build
+      - name: dotnet build
+        run: docker build
 
       - name: Run tests
-        run: docker compose up --exit-code-from tests tests
+        run: dotnet test -c Release --collect:"XPlat Code Coverage"
 
       - name: Write to Job Summary unit tests results
         run: cat tests-results/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
