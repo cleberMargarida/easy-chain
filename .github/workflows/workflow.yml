@@ -19,7 +19,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '7.x'  # Specify your .NET version
 
     - name: Restore dependencies
       run: dotnet restore
@@ -34,8 +34,7 @@ jobs:
       run: dotnet tool install --global dotnet-reportgenerator-globaltool
 
     - name: Add .NET tools to PATH
-      shell: bash
-      run: echo "::add-path::$(dotnet --list-tools-global | grep -oP '^\s*Installed commands:\s*\K.*')"
+      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
     - name: Generate coverage report
       run: reportgenerator -reports:**/coverage.cobertura.xml -targetdir:CoverageReport -reporttypes:Html
