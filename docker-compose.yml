@@ -11,16 +11,15 @@ services:
       target: build
     volumes:
       - ./tests-results:/app/tests/test-results
-    command: >
-      sh -c "dotnet test
-        -c Release
-        --logger 'trx;LogFilePrefix=/app/tests/test-results/'
-        /p:CollectCoverage=true
-        /p:CoverletOutputFormat=cobertura
+    entrypoint: >
+      sh -c "dotnet test -c Release 
+        --logger 'trx;LogFilePrefix=/app/tests/test-results/' 
+        /p:CollectCoverage=true 
+        /p:CoverletOutputFormat=cobertura 
         /p:Exclude='[EasyChain.TestsShared]*,[EasyChain.*.UnitTests]*' &&
       reportgenerator
-        -reports:/app/tests/EasyChain.*/coverage.cobertura.xml
-        -targetdir:/app/tests/test-results
-        -reporttypes:Cobertura;MarkdownSummaryGithub"
+        '-reports:/app/tests/EasyChain.*/coverage.cobertura.xml'
+        '-targetdir:/app/tests/test-results'
+        '-reporttypes:Cobertura;MarkdownSummaryGithub'"
     depends_on:
       - builder
