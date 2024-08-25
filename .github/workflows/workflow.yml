@@ -40,6 +40,9 @@ jobs:
       run: |
         reportgenerator -reports:**/coverage.cobertura.xml -targetdir:CoverageReport -reporttypes:Html Cobertura
 
+    - name: List coverage report directory
+      run: ls -la CoverageReport
+
     - name: Validate coverage
       run: |
         COVERAGE_THRESHOLD=80
