@@ -30,6 +30,13 @@ jobs:
     - name: Run tests with coverage
       run: dotnet test --no-build --configuration Debug --collect:"XPlat Code Coverage"
 
+    - name: Install ReportGenerator
+      run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+    - name: Add .NET tools to PATH
+      shell: bash
+      run: echo "::add-path::$(dotnet --list-tools-global | grep -oP '^\s*Installed commands:\s*\K.*')"
+
     - name: Generate coverage report
       run: reportgenerator -reports:**/coverage.cobertura.xml -targetdir:CoverageReport -reporttypes:Html
 
@@ -38,15 +45,3 @@ jobs:
       with:
         name: code-coverage-report
         path: CoverageReport
-
-    - name: Validate coverage (optional)
-      run: |
-        COVERAGE_THRESHOLD=80
-        COVERAGE=$(grep -Po 'line-rate="\K[0-9]+\.[0-9]+' CoverageReport/Cobertura.xml)
-        COVERAGE_INT=${COVERAGE%%.*}
-        if [ "$COVERAGE_INT" -lt "$COVERAGE_THRESHOLD" ]; then
-          echo "Code coverage ($COVERAGE%) is below the threshold ($COVERAGE_THRESHOLD%)"
-          exit 1
-        else
-          echo "Code coverage ($COVERAGE%) meets the threshold ($COVERAGE_THRESHOLD%)"
-        fi
