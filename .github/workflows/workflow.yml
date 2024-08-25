@@ -19,18 +19,22 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
-    - name: build
-      run: dotnet build
-
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 8.0.x
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test -c Release --collect:"XPlat Code Coverage"
+    - name: Test        
+      run: dotnet test --collect:"XPlat Code Coverage" --results-directory coverage
+
+    - name: Code Coverage Summary Report
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: 'coverage/*/coverage.cobertura.xml'
+        badge: true
+        format: 'markdown'
+        output: 'both'
+      
+    - name: Write to Job Summary
+      run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+    
 
