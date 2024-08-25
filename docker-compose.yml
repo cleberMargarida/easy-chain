@@ -20,7 +20,7 @@ services:
         /p:CoverletOutputFormat=cobertura
         /p:Exclude='[EasyChain.TestsShared]*%2c[EasyChain.*.Tests]*' ;
       reportgenerator
-        '-reports:/app/tests/GigPay.Core.*/coverage.cobertura.xml'
+        '-reports:/app/tests/EasyChain.*/coverage.cobertura.xml'
         '-targetdir:/app/tests/test-results' 
         '-reporttypes:Cobertura;MarkdownSummaryGithub'"
     depends_on:
