@@ -1,0 +1,66 @@
+name: .NET Build, Test, and Coverage
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'  # Specify your .NET version
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Debug
+
+    - name: Run tests with coverage
+      run: dotnet test --no-build --configuration Debug --collect:"XPlat Code Coverage"
+
+    - name: Install ReportGenerator
+      run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+    - name: Add .NET tools to PATH
+      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+    - name: Generate coverage reports
+      run: |
+        reportgenerator -reports:**/coverage.cobertura.xml -targetdir:CoverageReport -reporttypes:Html Cobertura
+
+    - name: List coverage report directory
+      run: ls -la CoverageReport
+
+    - name: Validate coverage
+      run: |
+        COVERAGE_THRESHOLD=80
+        COVERAGE=$(grep -Po 'line-rate="\K[0-9]+\.[0-9]+' CoverageReport/Cobertura.xml)
+        if [ -z "$COVERAGE" ]; then
+          echo "Coverage report not found or is empty."
+          exit 1
+        fi
+        COVERAGE_INT=${COVERAGE%%.*}
+        if [ "$COVERAGE_INT" -lt "$COVERAGE_THRESHOLD" ]; then
+          echo "Code coverage ($COVERAGE%) is below the threshold ($COVERAGE_THRESHOLD%)"
+          exit 1
+        else
+          echo "Code coverage ($COVERAGE%) meets the threshold ($COVERAGE_THRESHOLD%)"
+        fi
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-coverage-report
+        path: CoverageReport
