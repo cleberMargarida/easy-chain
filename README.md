@@ -9,6 +9,7 @@
     <img src="https://camo.githubusercontent.com/ff5d6927f201cb1122f1a454a524c334a4406398af1ce88c5ac4c5fd57501ae9/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f436f6465253230436f7665726167652d3130302532352d737563636573733f7374796c653d666c6174" alt="EasyChain Coverage">
   </a>
  </p>
+ 
 ## Features
 
 - **.NET Standard Support**: Compatible with all .NET applications, including .NET Core, .NET 5, .NET 6, .NET 7, .NET 8, and .NET 9.
