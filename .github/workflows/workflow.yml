@@ -48,6 +48,8 @@ jobs:
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       run: |
-        COVERAGE_FILE=$(ls coverage/*/coverage.cobertura.xml)
-        csmacnz.Coveralls --reportgenerator -i $COVERAGE_FILE --repoToken $COVERALLS_REPO_TOKEN
+        COVERAGE_FILE=$(find $(pwd)/coverage -name coverage.cobertura.xml)
+        echo "Coverage file path: $COVERAGE_FILE"
+        csmacnz.Coveralls --reportgenerator -i "$COVERAGE_FILE" --repoToken $COVERALLS_REPO_TOKEN
+
 
