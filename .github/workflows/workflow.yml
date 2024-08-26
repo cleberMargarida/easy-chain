@@ -51,21 +51,14 @@ jobs:
     - name: Install Coveralls.net Tool
       run: dotnet tool install --global coveralls.net
 
-    - name: Verify Coverage File Path
+    - name: Debug Information
       run: |
-        COVERAGE_FILE=$(find $(pwd)/coverage -name coverage.cobertura.xml)
-        echo "Coverage file path: $COVERAGE_FILE"
-        ls -l $COVERAGE_FILE
-
-    - name: Set Permissions on Coverage File
-      run: |
-        COVERAGE_FILE=$(find $(pwd)/coverage -name coverage.cobertura.xml)
-        chmod +r $COVERAGE_FILE
+        pwd
+        ls -al /home/runner/work/easy-chain/easy-chain/coverage/a73bf7c3-29bc-4bae-a26e-ff80165118a7
 
     - name: Run Coveralls
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       run: |
-        COVERAGE_FILE=$(find $(pwd)/coverage -name coverage.cobertura.xml)
-        echo "Running Coveralls with coverage file: $COVERAGE_FILE"
-        csmacnz.Coveralls --reportgenerator -i "$COVERAGE_FILE" --repoToken $COVERALLS_REPO_TOKEN || echo "Coveralls failed"
+        cd /home/runner/work/easy-chain/easy-chain/coverage/a73bf7c3-29bc-4bae-a26e-ff80165118a7
+        csmacnz.Coveralls --reportgenerator -i "coverage.cobertura.xml" --repoToken $COVERALLS_REPO_TOKEN || echo "Coveralls failed"
