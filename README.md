@@ -1,7 +1,11 @@
 # EasyChain
 
 `EasyChain` is a lightweight .NET library designed for implementing the Chain of Responsibility pattern. It enables you to define a sequence of handlers to process messages in a flexible and decoupled manner.
+
 <p align="left">
+  <a href="https://github.com/cleberMargarida/easy-chain/actions/workflows/workflow.yml">
+    <img src="https://github.com/cleberMargarida/easy-chain/actions/workflows/workflow.yml/badge.svg" alt="Build-deploy pipeline">
+  </a>
   <a href="https://www.nuget.org/packages/EasyChain">
     <img src="https://img.shields.io/nuget/vpre/EasyChain.svg" alt="EasyChain Nuget Version">
   </a>  
@@ -9,6 +13,24 @@
     <img src="https://camo.githubusercontent.com/ff5d6927f201cb1122f1a454a524c334a4406398af1ce88c5ac4c5fd57501ae9/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f436f6465253230436f7665726167652d3130302532352d737563636573733f7374796c653d666c6174" alt="EasyChain Coverage">
   </a>
 </p>
+
+## Chain of responsibility
+
+A light-weight and straightforward library for implementing the chain of responsibility pattern.
+Consider take a look at [Source Making - Chain of Responsibility](https://sourcemaking.com/design_patterns/chain_of_responsibility)
+
+```mermaid
+flowchart LR
+    A[Chain Run] -->|message| C{Decision 1}
+    C -->|Yes| D[await next]
+    C -->|No| P[Return]
+    D --> F{Decision 2}
+    F -->|Yes| H[await next]
+    F -->|No| Q[Return]
+    H --> I{Decision 3}
+    I -->|Yes| J[await next]
+    I -->|No| R[Return]
+```
  
 ## Features
 
@@ -29,21 +51,6 @@ dotnet add package EasyChain
 
 ## Usage
 Here's a quick example to get you started:
-
-The diagram below provides a high-level view of how the chain operates:
-```mermaid
-flowchart LR
-    A[Chain Run] -->|message| C{Decision 1}
-    C -->|Yes| D[await next]
-    C -->|No| P[Return]
-    D --> F{Decision 2}
-    F -->|Yes| H[await next]
-    F -->|No| Q[Return]
-    H --> I{Decision 3}
-    I -->|Yes| J[await next]
-    I -->|No| R[Return]
-
-```
 
 1. Define Your Chain
   ```csharp
