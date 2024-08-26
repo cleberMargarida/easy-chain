@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "versionHeightOffset": 0,
+  "publicReleaseRefSpec": [
+    "^refs/heads/main$",
+    "^refs/tags/v\\d+\\.\\d+"
+  ],
+  "cloudBuild": {
+    "setVersionVariables": true
+  }
+}
