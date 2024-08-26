@@ -45,15 +45,10 @@ jobs:
         recreate: true
         path: code-coverage-results.md
     
-    - name: Generate Test Coverage Report to Coveralls.io
-      run: dotnet test --no-restore --verbosity normal /p:CollectCoverage=true /p:CoverletOutput=../../test-results /p:CoverletOutputFormat=lcov
-    
     - name: Publish Test Coverage Report to Coveralls.io
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        path-to-lcov: ./test-results.info
-
 
   publish:
     name: Publish
