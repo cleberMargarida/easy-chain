@@ -74,13 +74,5 @@ jobs:
         run: dotnet pack src/EasyChain/EasyChain.csproj -c Release -p:Version=${{ steps.get_version.outputs.version }} --no-restore
 
       - name: publish on version change
-        id: publish_nuget
-        uses: brandedoutcast/publish-nuget@v2
-        with:
-          PROJECT_FILE_PATH: src/EasyChain/EasyChain.csproj
-          BUILD_CONFIGURATION: Release
-          PACKAGE_NAME: EasyChain
-          VERSION_STATIC: ${{ steps.get_version.outputs.version }}
-          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
-          NUGET_SOURCE: https://api.nuget.org
+        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_KEY }} -s https://api.nuget.org/v3/index.json
 
