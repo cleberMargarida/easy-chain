@@ -44,3 +44,42 @@ jobs:
       with:
         recreate: true
         path: code-coverage-results.md
+
+  publish:
+    name: build, pack & publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install Nerdbank.GitVersioning Tool
+        run: dotnet tool install --global nbgv
+
+      - name: Restore Nerdbank.GitVersioning Version Info
+        run: nbgv get-version --format json > version.json
+
+      - name: Extract Version Number
+        id: get_version
+        run: echo "##[set-output name=version;]$(jq -r '.CloudBuildVersionVars.NuGetPackageVersion' version.json)"
+
+      - name: build and pack
+        run: dotnet restore
+
+      - name: build and pack
+        run: dotnet pack src/EasyChain/EasyChain.csproj -c Release -p:Version=${{ steps.get_version.outputs.version }} --no-restore
+
+      - name: publish on version change
+        id: publish_nuget
+        uses: brandedoutcast/publish-nuget@v2
+        with:
+          PROJECT_FILE_PATH: src/EasyChain/EasyChain.csproj
+          BUILD_CONFIGURATION: Release
+          PACKAGE_NAME: EasyChain
+          VERSION_STATIC: ${{ steps.get_version.outputs.version }}
+          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_SOURCE: https://api.nuget.org
+
