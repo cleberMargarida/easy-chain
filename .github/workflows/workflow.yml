@@ -12,15 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
+
+    - name: Add .NET tools to PATH
+      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
     - name: Restore dependencies
       run: dotnet restore
+
     - name: Build
       run: dotnet build --no-restore
-    - name: Test        
+
+    - name: Test
       run: dotnet test --collect:"XPlat Code Coverage" --results-directory coverage
 
     - name: Code Coverage Summary Report
@@ -30,7 +37,7 @@ jobs:
         badge: true
         format: 'markdown'
         output: 'both'
-      
+
     - name: Write to Job Summary
       run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
 
@@ -40,16 +47,25 @@ jobs:
       with:
         recreate: true
         path: code-coverage-results.md
-        
+
     - name: Install Coveralls.net Tool
       run: dotnet tool install --global coveralls.net
+
+    - name: Verify Coverage File Path
+      run: |
+        COVERAGE_FILE=$(find $(pwd)/coverage -name coverage.cobertura.xml)
+        echo "Coverage file path: $COVERAGE_FILE"
+        ls -l $COVERAGE_FILE
+
+    - name: Set Permissions on Coverage File
+      run: |
+        COVERAGE_FILE=$(find $(pwd)/coverage -name coverage.cobertura.xml)
+        chmod +r $COVERAGE_FILE
 
     - name: Run Coveralls
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       run: |
         COVERAGE_FILE=$(find $(pwd)/coverage -name coverage.cobertura.xml)
-        echo "Coverage file path: $COVERAGE_FILE"
-        csmacnz.Coveralls --reportgenerator -i "$COVERAGE_FILE" --repoToken $COVERALLS_REPO_TOKEN
-
-
+        echo "Running Coveralls with coverage file: $COVERAGE_FILE"
+        csmacnz.Coveralls --reportgenerator -i "$COVERAGE_FILE" --repoToken $COVERALLS_REPO_TOKEN || echo "Coveralls failed"
