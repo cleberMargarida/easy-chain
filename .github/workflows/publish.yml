@@ -33,6 +33,9 @@ jobs:
         run: echo "##[set-output name=version;]$(jq -r '.CloudBuildVersionVars.NuGetPackageVersion' version.json)"
 
       - name: build and pack
+        run: dotnet restore
+
+      - name: build and pack
         run: dotnet pack src/EasyChain/EasyChain.csproj -c Release -p:Version=${{ steps.get_version.outputs.version }} --no-restore
 
       - name: publish on version change
