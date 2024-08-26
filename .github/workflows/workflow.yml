@@ -65,4 +65,3 @@ jobs:
 
     - name: Run Coveralls
       run: csmacnz.Coveralls --reportgenerator -i "coverage/**/*.cobertura.xml" --repoToken "${{ secrets.COVERALLS_REPO_TOKEN }}"
-
