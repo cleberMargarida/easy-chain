@@ -12,6 +12,8 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<RepositoryUrl>https://github.com/cleberMargarida/easy-chain</RepositoryUrl>
 		<PackageProjectUrl>https://github.com/cleberMargarida/easy-chain</PackageProjectUrl>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>
