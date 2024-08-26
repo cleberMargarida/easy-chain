@@ -51,20 +51,5 @@ jobs:
     - name: Install Coveralls.net Tool
       run: dotnet tool install --global coveralls.net
 
-    - name: Find Coverage File
-      id: find_file
-      run: echo "COVERAGE_FILE=$(find $(pwd)/coverage -name coverage.cobertura.xml)" >> $GITHUB_ENV
-
-    - name: Debug Information
-      run: |
-        echo "Working Directory: $(pwd)"
-        echo "Listing Coverage Directory:"
-        ls -al $(pwd)/coverage
-        echo "Coverage File: ${{ env.COVERAGE_FILE }}"
-
     - name: Run Coveralls
-      env:
-        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-      run: |
-        echo "Running Coveralls with coverage file: ${{ env.COVERAGE_FILE }}"
-        csmacnz.Coveralls --reportgenerator -i "${{ env.COVERAGE_FILE }}" --repoToken $COVERALLS_REPO_TOKEN || echo "Coveralls failed"
+      run: csmacnz.Coveralls --reportgenerator -i "${{ env.COVERAGE_FILE }}" --repoToken "${{ secrets.COVERALLS_REPO_TOKEN }}"
