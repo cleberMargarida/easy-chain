@@ -11,7 +11,10 @@ jobs:
     name: Build & Tests
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: false
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
