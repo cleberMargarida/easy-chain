@@ -45,11 +45,6 @@ jobs:
         recreate: true
         path: code-coverage-results.md
     
-    - name: Publish Test Coverage Report to Coveralls.io
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-
   publish:
     name: Publish
     needs: build
