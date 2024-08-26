@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build and Tests
+    name: Build & Tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -46,7 +46,7 @@ jobs:
         path: code-coverage-results.md
 
   publish:
-    name: build, pack & publish
+    name: Publish
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -67,12 +67,21 @@ jobs:
         id: get_version
         run: echo "##[set-output name=version;]$(jq -r '.CloudBuildVersionVars.NuGetPackageVersion' version.json)"
 
-      - name: build and pack
-        run: dotnet restore
+      - name: Pack NuGet package
+        run: |
+             dotnet restore
+             dotnet pack src/EasyChain/EasyChain.csproj -c Release -p:Version=${{ steps.get_version.outputs.version }} --no-restore
 
-      - name: build and pack
-        run: dotnet pack src/EasyChain/EasyChain.csproj -c Release -p:Version=${{ steps.get_version.outputs.version }} --no-restore
-
-      - name: publish on version change
-        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
-
+      - name: Find and push NuGet package
+        run: |
+          # Find the .nupkg file
+          PACKAGE_FILE=$(find src/EasyChain/bin/Release -name '*.nupkg')
+          
+          # Check if the file exists
+          if [ -z "$PACKAGE_FILE" ]; then
+            echo "No .nupkg file found!"
+            exit 1
+          fi
+      
+          # Push the package
+          dotnet nuget push "$PACKAGE_FILE" -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
