@@ -39,7 +39,7 @@ jobs:
     - name: Code Coverage Summary Report
       uses: irongut/CodeCoverageSummary@v1.3.0
       with:
-        filename: 'coverage/*/coverage.cobertura.xml'
+        filename: 'coverage/**/*.cobertura.xml'
         badge: true
         format: 'markdown'
         output: 'both'
@@ -61,7 +61,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: coverage-report
-        path: coverage
+        path: download-coverage
 
     - name: Run Coveralls
-      run: csmacnz.Coveralls --reportgenerator -i "coverage/**/*.cobertura.xml" --repoToken "${{ secrets.COVERALLS_REPO_TOKEN }}"
+      run: csmacnz.Coveralls --reportgenerator -i "download-coverage/**/*.cobertura.xml" --repoToken "${{ secrets.COVERALLS_REPO_TOKEN }}"
