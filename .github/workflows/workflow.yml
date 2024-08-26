@@ -18,9 +18,6 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Add .NET tools to PATH
-      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
     - name: Restore dependencies
       run: dotnet restore
 
