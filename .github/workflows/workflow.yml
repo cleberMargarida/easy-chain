@@ -70,15 +70,7 @@ jobs:
       - name: Pack NuGet package
         run: |
              dotnet restore
-             dotnet test --no-restore --verbosity normal /p:CollectCoverage=true /p:CoverletOutput=../../test-results /p:CoverletOutputFormat=lcov
              dotnet pack src/EasyChain/EasyChain.csproj -c Release -p:Version=${{ steps.get_version.outputs.version }} --no-restore
-             tree
-
-      - name: Publish Test Coverage Report to Coveralls.io
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./test-results.info
 
       - name: Find and push NuGet package
         run: |
