@@ -8,13 +8,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+      <PackageReference Include="EasyChain" Version="1.0.4-g5d078facc3" />
 	  <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.7.2" />
 	  <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.7.2" />
 	  <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.7.2" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\..\src\EasyChain\EasyChain.csproj" />
 	</ItemGroup>
 
 </Project>
