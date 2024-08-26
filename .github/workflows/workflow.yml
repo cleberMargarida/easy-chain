@@ -44,10 +44,10 @@ jobs:
     - name: Install Coveralls.net Tool
       run: dotnet tool install --global coveralls.net
 
-    - name: List Coverage Directory (Debug Step)
-      run: ls -R coverage
-
     - name: Run Coveralls
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-      run: csmacnz.Coveralls --reportgenerator -i "$(pwd)/coverage/*/coverage.cobertura.xml" --repoToken $COVERALLS_REPO_TOKEN
+      run: |
+        COVERAGE_FILE=$(ls coverage/*/coverage.cobertura.xml)
+        csmacnz.Coveralls --reportgenerator -i $COVERAGE_FILE --repoToken $COVERALLS_REPO_TOKEN
+
