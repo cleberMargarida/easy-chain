@@ -1,76 +1,199 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 
 namespace EasyChain;
 
-internal static class ChainBuilder
+internal partial class ChainBuilder<TMessage> : IChainBuilder<TMessage>, IForkBuilder<TMessage>
 {
-    /// <summary>
-    /// This method builds a <see cref="Chain{TMessage}"/> using the provided <see cref="IServiceProvider"/> and <see cref="ChainConfig{TMessage}"/>  
-    /// </summary>
-    public static Chain<TMessage> Build<TBuilder, TMessage>(this TBuilder _, IServiceProvider services, ChainConfig<TMessage> config)
-        where TBuilder : class, IChainBuilder, new()
+    public IChainBuilder<TMessage> SetNext<THandler>() where THandler : IHandler<TMessage>
     {
-        // Define the parameter expression representing the message passed to the chain
-        ParameterExpression messageParam = Expression.Parameter(typeof(TMessage));
-
-        // Initialize the last invocation in the chain as a no-op that completes immediately
-        ChainHandling<TMessage> lastInvocation = _ => Task.CompletedTask;
-
-        // Start with the base delegate and call expression
-        MethodCallExpression callExpression = Expression.Call(Expression.Constant(lastInvocation.Target), lastInvocation.Method, messageParam);
-
-        // Define a variable expression for the IServiceScope parameter
-        Expression scopeParam = Expression.Variable(typeof(IServiceScope));
-
-        // Get the method info for IHandler<TMessage>.Handle
-        MethodInfo handleMethod = typeof(IHandler<TMessage>).GetMethod(nameof(IHandler<TMessage>.Handle), BindingFlags.Public | BindingFlags.Instance)!;
-
-        // Iterate over handler factories to build the chain of responsibility
-        foreach (var type in config.ChainTypes)
-        {
-            // Create an expression for the next invocation in the chain
-            var nextInvocation = Expression.Lambda<ChainHandling<TMessage>>(callExpression, messageParam).Reduce();
-
-            // Build the call to IHandler<TMessage>.Handle with the current handler, message parameter, and next invocation
-            callExpression = Expression.Call(Expression.Parameter(type), handleMethod, messageParam, nextInvocation);
-        }
-
-        // Compile the final expression into a delegate
-        var tree = Expression.Lambda<Func<TMessage, Task>>(callExpression, messageParam);
-
-        // Return a new Chain<TMessage> that uses the compiled delegate
-        return new Chain<TMessage>(services, (s, m) => tree.Rewrite(s).Compile()(m));
+        CallChainDescriptors.Push(typeof(THandler));
+        return this;
     }
 
-    // Rewrites the expression tree, injecting the IServiceScope into the expression
-    private static Expression<Func<TMessage, Task>> Rewrite<TMessage>(this Expression<Func<TMessage, Task>> tree, IServiceScope scope)
+    public IForkBuilder<TMessage> Fork(Action<IChainBuilder<TMessage>, IChainBuilder<TMessage>> fork)
     {
-        return new ChainExpressionRewriter().Rewrite(tree, scope);
+        CallChainDescriptors.Push(fork);
+        return this;
+    }
+
+    public IForkBuilder<TMessage> Fork(Action<IChainBuilder<TMessage>, IChainBuilder<TMessage>, IChainBuilder<TMessage>> fork)
+    {
+        CallChainDescriptors.Push(fork);
+        return this;
+    }
+
+    public IForkBuilder<TMessage> Fork(Action<IChainBuilder<TMessage>, IChainBuilder<TMessage>, IChainBuilder<TMessage>, IChainBuilder<TMessage>> fork)
+    {
+        CallChainDescriptors.Push(fork);
+        return this;
+    }
+
+    public IChainBuilder<TMessage> SetNext(Delegate @delegate)
+    {
+        CallChainDescriptors.Push(@delegate);
+        return this;
+    }
+
+    public IChainBuilder<TMessage> Merge()
+    {
+        return this;
+    }
+
+    /// <summary>
+    /// Gets the stack of handler types that make up the chain.
+    /// </summary>
+    /// <value>A stack containing the types of handlers in the order they were Pushed.</value>
+    internal Stack<CallChainDescriptor<TMessage>> CallChainDescriptors { get; } = new Stack<CallChainDescriptor<TMessage>>();
+}
+
+internal partial class ChainBuilder<TMessage>
+{
+    private static readonly MethodInfo _whenAllMethod = ((MethodCallExpression)((Expression<Func<Task[], Task>>)(arr => Task.WhenAll(arr))).Body).Method;
+    private static readonly MethodInfo _continueWithMethod = ((MethodCallExpression)((Expression<Func<Task, Func<Task, Task>, Task>>)((t, f) => t.ContinueWith(f))).Body).Method;
+    private static readonly ParameterExpression _serviceProviderParam = Expression.Parameter(typeof(IServiceProvider));
+    private static readonly ParameterExpression _typeParam = Expression.Parameter(typeof(Type));
+    private static readonly MethodCallExpression _getServiceMethodCall = Expression.Call(instance: _serviceProviderParam, typeof(IServiceProvider).GetMethod(nameof(IServiceProvider.GetService)), _typeParam);
+    private static readonly ParameterExpression _messageParam = Expression.Parameter(typeof(TMessage));
+    private static readonly MethodInfo _handleMethod = typeof(IHandler<TMessage>).GetMethod(nameof(IHandler<TMessage>.Handle), BindingFlags.Public | BindingFlags.Instance)!;
+    private static readonly IServiceProvider _parameterlessServiceProvider = new ParameterLessServiceServiceProvider();
+
+    public IChain<TMessage> Build()
+    {
+        return Build(_parameterlessServiceProvider);
+    }
+
+    /// <summary>
+    /// This method builds a <see cref="Chain{TMessage}"/> using the provided <see cref="IServiceProvider"/> and <see cref="ChainBuilder{TMessage}"/>  
+    /// </summary>
+    public IChain<TMessage> Build(IServiceProvider services)
+    {
+        var callExpression = ResolveChainMethodCall(
+            this,
+            _messageParam,
+            _getServiceMethodCall,
+            _typeParam);
+
+        var chainLambda = Expression.Lambda<Func<TMessage, Task>>(callExpression, _messageParam);
+        var chainInvokation = Expression.Invoke(chainLambda, _messageParam);
+        var next = Expression.Lambda<Func<IServiceProvider, TMessage, Task>>(chainInvokation, _serviceProviderParam, _messageParam);
+
+        return new Chain<TMessage>(services, next.Compile());
+    }
+
+    private static MethodCallExpression ResolveChainMethodCall(
+        ChainBuilder<TMessage> config,
+        ParameterExpression messageParam,
+        MethodCallExpression getServiceMethodCall,
+        ParameterExpression typeParam)
+    {
+        MethodCallExpression next = Expression.Call(Expression.Constant(ChainBuilderHelpers<TMessage>.TaskCompleted.Target), ChainBuilderHelpers<TMessage>.TaskCompleted.Method, messageParam);
+
+        foreach (var descriptor in config.CallChainDescriptors)
+        {
+            next = ResolveChainMethodCallInternal(messageParam, getServiceMethodCall, typeParam, _handleMethod, next, descriptor);
+        }
+
+        return next;
+    }
+
+    private static MethodCallExpression ResolveChainMethodCallInternal(
+        ParameterExpression messageParam,
+        MethodCallExpression getServiceMethodCall,
+        ParameterExpression typeParam,
+        MethodInfo handleMethod,
+        MethodCallExpression callExpression,
+        CallChainDescriptor<TMessage> descriptor)
+    {
+        if (descriptor.Type != null)
+        {
+            var getServiceMethodCallLambda = Expression.Lambda(getServiceMethodCall, parameters: [typeParam]);
+            var instanceAsObject = Expression.Invoke(getServiceMethodCallLambda, Expression.Constant(descriptor.Type));
+            var instance = Expression.Convert(instanceAsObject, descriptor.Type);
+            var nextInvocation = Expression.Lambda<ChainDelegate<TMessage>>(callExpression, messageParam);
+
+            return Expression.Call(instance, handleMethod, messageParam, nextInvocation);
+        }
+
+        if (descriptor.Fork != null)
+        {
+            List<InvocationExpression> invocationExpressions = [];
+
+            foreach (var branch in descriptor.GetBranches())
+            {
+                var innerCallExpression = ResolveChainMethodCall(branch, messageParam, getServiceMethodCall, typeParam);
+                var innerCallLambda = Expression.Lambda<ChainDelegate<TMessage>>(innerCallExpression, messageParam);
+                invocationExpressions.Add(Expression.Invoke(innerCallLambda, messageParam));
+            }
+
+            var taskArray = Expression.NewArrayInit(typeof(Task), invocationExpressions);
+            var combinedExpression = Expression.Call(_whenAllMethod, taskArray);
+            var chainHandling = Expression.Lambda<ChainDelegate<TMessage>>(combinedExpression, messageParam);
+            var chainHandlingInvoke = Expression.Invoke(chainHandling, messageParam);
+            var continuation = Expression.Lambda<Func<Task, Task>>(callExpression, Expression.Parameter(typeof(Task)));
+
+            return Expression.Call(chainHandlingInvoke, _continueWithMethod, continuation);
+        }
+
+        if (descriptor.Delegate != null)
+        {
+            var chainHandling = Expression.Lambda<ChainDelegate<TMessage>>(callExpression, messageParam);
+            var @delegate = descriptor.Delegate;
+            var instance = Expression.Constant(@delegate.Target);
+            var parameters = @delegate.Method
+                .GetParameters()
+                .Select(p =>
+                {
+                    if (p.ParameterType == typeof(TMessage))
+                    {
+                        return messageParam.Reduce();
+                    }
+
+                    if (p.ParameterType == typeof(ChainDelegate<TMessage>))
+                    {
+                        return Expression.Lambda<ChainDelegate<TMessage>>(callExpression, messageParam).Reduce();
+                    }
+
+                    var parameterType = Expression.Constant(p.ParameterType);
+                    var getServiceMethodCallLambda = Expression.Lambda(getServiceMethodCall, parameters: [typeParam]);
+                    var instanceAsObject = Expression.Invoke(getServiceMethodCallLambda, Expression.Constant(p.ParameterType));
+
+                    return Expression.Convert(instanceAsObject, p.ParameterType).Reduce();
+
+                });
+
+            return Expression.Call(instance, @delegate.Method, parameters);
+        }
+
+        throw new InvalidOperationException();
     }
 }
 
-internal sealed class ChainExpressionRewriter : ExpressionVisitor
+file class ParameterLessServiceServiceProvider : IServiceProvider, IServiceScope, IServiceScopeFactory
 {
-    private IServiceProvider _services = default!;
+    public IServiceProvider ServiceProvider => this;
 
-    /// <summary>
-    /// Visit parameters and replace IServiceScope parameters with a constant expression
-    /// </summary>
-    protected override Expression VisitParameter(ParameterExpression node)
-    {
-        return typeof(IHandler).IsAssignableFrom(node.Type) ? Expression.Constant(_services.GetService(node.Type)) : base.VisitParameter(node);
-    }
+    public IServiceScope CreateScope() => this;
 
-    /// <summary>
-    /// Rewrite the expression tree by replacing IServiceScope parameters with the provided value
-    /// </summary>
-    internal Expression<Func<TInput, TOutput>> Rewrite<TInput, TOutput>(Expression<Func<TInput, TOutput>> expression, IServiceScope scope)
+    public void Dispose() { }
+
+    public object GetService(Type serviceType)
     {
-        _services = scope.ServiceProvider;
-        return (Expression<Func<TInput, TOutput>>)Visit(expression);
+        if (typeof(IServiceScope).IsAssignableFrom(serviceType))
+        {
+            return this;
+        }
+
+        if (typeof(IServiceScopeFactory).IsAssignableFrom(serviceType))
+        {
+            return this;
+        }
+
+        return Activator.CreateInstance(serviceType);
     }
 }

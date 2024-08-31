@@ -1,16 +1,19 @@
 ﻿namespace EasyChain;
 
 /// <summary>
-/// Represents the configuration for building a chain of handlers for messages of type <typeparamref name="TMessage"/>.
+/// Represents a base interface for chain builders.
+/// </summary>
+public interface IChainConfig { }
+
+/// <summary>
+/// Represents a generic interface for chain builders that can configure a specific type of call chain.
 /// </summary>
 /// <typeparam name="T">The type of the message that the chain will handle.</typeparam>
-
-public interface IChainConfig<T>
+public interface IChainConfig<T> : IChainConfig
 {
     /// <summary>
-    /// Adds a handler type to the chain configuration.
+    /// Configures the call chain using the specified chain configuration.
     /// </summary>
-    /// <typeparam name="THandler">The type of the handler to add to the chain. Must implement <see cref="IHandler{T}"/>.</typeparam>
-
-    IChainConfig<T> Add<THandler>() where THandler : IHandler<T>;
+    /// <param name="callChain">The chain configuration to be used for configuring the chain.</param>
+    void Configure(IChainBuilder<T> callChain);
 }

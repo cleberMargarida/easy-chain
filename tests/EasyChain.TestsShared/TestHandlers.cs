@@ -7,7 +7,7 @@ public class TestHandler : IHandler<object>
 {
     public int Invocations { get; private set; }
 
-    public async Task Handle(object message, ChainHandling<object> next)
+    public async Task Handle(object message, ChainDelegate<object> next)
     {
         Invocations++;
         if (message is not "stop on first")

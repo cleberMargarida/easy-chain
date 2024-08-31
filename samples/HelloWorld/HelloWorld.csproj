@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EasyChain" Version="1.0.4-g5d078facc3" />
+    <ProjectReference Include="..\..\src\EasyChain\EasyChain.csproj" />
   </ItemGroup>
 
 </Project>

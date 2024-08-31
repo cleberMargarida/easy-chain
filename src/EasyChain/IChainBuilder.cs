@@ -1,20 +1,46 @@
-﻿namespace EasyChain
+﻿using System;
+
+namespace EasyChain;
+
+/// <summary>
+/// Represents the configuration for building a chain of handlers for messages of type <typeparamref name="TMessage"/>.
+/// </summary>
+/// <typeparam name="TMessage">The type of the message that the chain will handle.</typeparam>
+public interface IChainBuilder<TMessage> : IBuildable<TMessage>
 {
     /// <summary>
-    /// Represents a base interface for chain builders.
+    /// Adds a handler type to the chain configuration.
     /// </summary>
-    public interface IChainBuilder { }
+    /// <typeparam name="THandler">The type of the handler to add to the chain. 
+    /// Must implement <see cref="IHandler{TMessage}"/>.</typeparam>
+    /// <returns>The current <see cref="IChainBuilder{TMessage}"/> instance for further configuration.</returns>
+    IChainBuilder<TMessage> SetNext<THandler>() where THandler : IHandler<TMessage>;
 
     /// <summary>
-    /// Represents a generic interface for chain builders that can configure a specific type of call chain.
+    /// Adds a delegate as the next handler in the chain.
     /// </summary>
-    /// <typeparam name="T">The type of the message that the chain will handle.</typeparam>
-    public interface IChainBuilder<T> : IChainBuilder
-    {
-        /// <summary>
-        /// Configures the call chain using the specified chain configuration.
-        /// </summary>
-        /// <param name="callChain">The chain configuration to be used for configuring the chain.</param>
-        void Configure(IChainConfig<T> callChain);
-    }
+    /// <param name="delegate">The delegate to be added to the chain.</param>
+    /// <returns>The current <see cref="IChainBuilder{TMessage}"/> instance for further configuration.</returns>
+    IChainBuilder<TMessage> SetNext(Delegate @delegate);
+
+    /// <summary>
+    /// Forks the chain into two separate branches.
+    /// </summary>
+    /// <param name="fork">An action to configure the two branches of the fork.</param>
+    /// <returns>An instance of <see cref="IForkBuilder{TMessage}"/> for further configuration of the forked chain.</returns>
+    IForkBuilder<TMessage> Fork(Action<IChainBuilder<TMessage>, IChainBuilder<TMessage>> fork);
+
+    /// <summary>
+    /// Forks the chain into three separate branches.
+    /// </summary>
+    /// <param name="fork">An action to configure the three branches of the fork.</param>
+    /// <returns>An instance of <see cref="IForkBuilder{TMessage}"/> for further configuration of the forked chain.</returns>
+    IForkBuilder<TMessage> Fork(Action<IChainBuilder<TMessage>, IChainBuilder<TMessage>, IChainBuilder<TMessage>> fork);
+
+    /// <summary>
+    /// Forks the chain into four separate branches.
+    /// </summary>
+    /// <param name="fork">An action to configure the four branches of the fork.</param>
+    /// <returns>An instance of <see cref="IForkBuilder{TMessage}"/> for further configuration of the forked chain.</returns>
+    IForkBuilder<TMessage> Fork(Action<IChainBuilder<TMessage>, IChainBuilder<TMessage>, IChainBuilder<TMessage>, IChainBuilder<TMessage>> fork);
 }

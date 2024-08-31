@@ -3,7 +3,7 @@
 namespace EasyChain.TestsShared;
 
 [ExcludeFromCodeCoverage(Justification = "Test file.")]
-public class EmptyChainBuilder : IChainBuilder<object>
+public class EmptyChainBuilder : IChainConfig<object>
 {
-    public void Configure(IChainConfig<object> callChain) { }
+    public void Configure(IChainBuilder<object> callChain) { }
 }

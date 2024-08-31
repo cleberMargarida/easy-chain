@@ -2,7 +2,7 @@
 
 internal class CarYearHandler : IHandler<Car>
 {
-    public async Task Handle(Car message, ChainHandling<Car> next)
+    public async Task Handle(Car message, ChainDelegate<Car> next)
     {
         if (message.Year > 1960)
         {

@@ -3,11 +3,14 @@
 namespace EasyChain.TestsShared;
 
 [ExcludeFromCodeCoverage(Justification = "Test file.")]
-public class TestChainBuilder : IChainBuilder<object>
+public class TestChainBuilder : IChainConfig<object>
 {
-    public void Configure(IChainConfig<object> callChain)
+    public void Configure(IChainBuilder<object> builder)
     {
-        callChain.Add<TestHandler>();
-        callChain.Add<TestHandler2>();
+        builder.SetNext<TestHandler>()
+               .Fork((b1, b2) => { })
+               .Merge()
+               .SetNext<TestHandler2>()
+               .SetNext(async () => { });
     }
 }

@@ -61,4 +61,17 @@ public class ChainTests
         handler1.Invocations.Should().Be(1);
         handler2.Invocations.Should().Be(0);
     }
+
+    [Fact]
+    public void Run_WithBuildingInline_ShouldHandleCorrectly()
+    {
+        // Arrange
+        var chain = Chain<object>.CreateBuilder()
+                                 .SetNext<TestHandler>()
+                                 .SetNext<TestHandler2>()
+                                 .Build();
+
+        // Act & Assert
+        chain.Run(string.Empty);
+    }
 }

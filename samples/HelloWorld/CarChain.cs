@@ -1,10 +1,10 @@
 ﻿using EasyChain;
 
-internal class CarChain : IChainBuilder<Car>
+internal class CarChain : IChainConfig<Car>
 {
-    public void Configure(IChainConfig<Car> callChain)
+    public void Configure(IChainBuilder<Car> builder)
     {
-        callChain.Add<CarYearHandler>();
-        callChain.Add<CarModelHandler>();
+        builder.SetNext<CarYearHandler>()
+               .SetNext<CarModelHandler>();
     }
 }
