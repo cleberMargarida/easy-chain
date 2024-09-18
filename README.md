@@ -57,9 +57,9 @@ Here's a quick example to get you started:
 
 ### 1. Define Your Chain
 ```csharp
-class CarChain : IChainBuilder<Car>
+class CarChain : IChainConfig<Car>
 {
-    public void Configure(IChainConfig<Car> callChain)
+    public void Configure(IChainBuilder<Car> callChain)
     {
         callChain.SetNext<CarYearHandler>()
                  .SetNext<CarModelHandler>();
@@ -108,19 +108,18 @@ await chain.Run(message);
 EasyChain allows you to fork the chain into multiple branches and merge them back later:
 
 ```csharp
-class CarChain : IChainBuilder<Car>
+class CarChain : IChainConfig<Car>
 {
-    public void Configure(IChainConfig<Car> callChain)
+    public void Configure(IChainBuilder<Car> callChain)
     {
-        callChain
-            .SetNext<CarYearHandler>()
-            .Fork((left, right) =>
-            {
-                left.SetNext<EngineSizeHandler>();
-                right.SetNext<CarModelHandler>();
-            })
-            .Merge()
-            .SetNext<CarPriceHandler>();
+        callChain.SetNext<CarYearHandler>()
+                 .Fork((left, right) =>
+                 {
+                     left.SetNext<EngineSizeHandler>();
+                     right.SetNext<CarModelHandler>();
+                 })
+                 .Merge()
+                 .SetNext<CarPriceHandler>();
     }
 }
 ```
