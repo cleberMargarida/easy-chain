@@ -148,8 +148,4 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 
 ## Contact
 
-For any questions or support, please reach out to cleber.margarida@outlook.com.
-```
-
-### Key Changes:
-- Added a **Building In-Line** section with an example of how to create and configure a chain in one statement.
+For any questions or support, please reach out to cleber.margarida@outlook.com
