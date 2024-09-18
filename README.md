@@ -12,7 +12,7 @@ Here's the updated `README` with the additional example for building in-line:
     <img src="https://img.shields.io/nuget/vpre/EasyChain.svg" alt="EasyChain Nuget Version">
   </a>  
   <a href="https://github.com/cleberMargarida/easy-chain/actions/runs/10553862586#summary-29234823720">
-    <img src="https://camo.githubusercontent.com/ff5d6927f201cb1122f1a454a524c334a4406398af1ce88c5ac4c5fd57501ae9/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f436f6465253230436f7665726167652d3130302532352d737563636573733f7374796c653d666c6174" alt="EasyChain Coverage">
+    <img src="https://camo.githubusercontent.com/64e5de57df4409175a42e38d3fe23291f6fe8bc1ccf2bf2a2007c7af2df7832c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f436f6465253230436f7665726167652d38342532352d737563636573733f7374796c653d666c6174" alt="EasyChain Coverage">
   </a>
 </p>
 
