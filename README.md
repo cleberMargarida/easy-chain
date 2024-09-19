@@ -1,8 +1,4 @@
-Here's the updated `README` with the additional example for building in-line:
-
 # EasyChain
-
-`EasyChain` is a lightweight .NET library designed for implementing the Chain of Responsibility pattern. It enables you to define a sequence of handlers to process messages in a flexible and decoupled manner.
 
 <p align="left">
   <a href="https://github.com/cleberMargarida/easy-chain/actions/workflows/workflow.yml">
@@ -16,23 +12,11 @@ Here's the updated `README` with the additional example for building in-line:
   </a>
 </p>
 
-## Chain of Responsibility
+`EasyChain` is a lightweight .NET library designed for implementing the Chain of Responsibility pattern. It enables you to define a sequence of handlers to process messages in a flexible and decoupled manner. 
 
-A lightweight and straightforward library for implementing the chain of responsibility pattern. 
-Take a look at [Source Making - Chain of Responsibility](https://sourcemaking.com/design_patterns/chain_of_responsibility).
+With `EasyChain`, you not only get linear chains, but you also have the advantage of branching into tree structures, giving you more power and flexibility when dealing with complex workflows.
 
-```mermaid
-flowchart LR
-    A[Chain Run] -->|message| C{Decision 1}
-    C -->|Yes| D[await next]
-    C -->|No| P[Return]
-    D --> F{Decision 2}
-    F -->|Yes| H[await next]
-    F -->|No| Q[Return]
-    H --> I{Decision 3}
-    I -->|Yes| J[await next]
-    I -->|No| R[Return]
-```
+To learn more about chain of responsibilities pattern, read the following article [Refactoring Guru - Chain of Responsibility](https://refactoring.guru/design-patterns/chain-of-responsibility).
 
 ## Features
 
@@ -42,6 +26,7 @@ flowchart LR
 - **Asynchronous Processing**: Handles messages asynchronously.
 - **Runtime Compilation**: Uses `System.Linq.Expressions` to compile methods dynamically at runtime, ensuring no code is embedded between your handlers.
 - **Ease of Use**: Extremely straightforward to set up and use.
+- **Tree-like Branching Support**: Fork and create tree-like structures, allowing flexible processing paths and parallel workflows.
 
 ## Installation
 
@@ -53,44 +38,34 @@ dotnet add package EasyChain
 
 ## Usage
 
+### 1. Define Your Chain
+
 Here's a quick example to get you started:
 
-### 1. Define Your Chain
 ```csharp
 class CarChain : IChainConfig<Car>
 {
     public void Configure(IChainBuilder<Car> callChain)
     {
         callChain.SetNext<CarYearHandler>()
+                 .SetNext<EngineSizeHandler>()
                  .SetNext<CarModelHandler>();
-    }
-}
-
-class CarYearHandler : IHandler<Car>
-{
-    public async Task Handle(Car message, ChainHandling<Car> next)
-    {
-        if (message.Year > 1960)
-            await next(message);
-    }
-}
-
-class CarModelHandler : IHandler<Car>
-{
-    public async Task Handle(Car message, ChainHandling<Car> next)
-    {
-        if (message.Model == "FooModel")
-            await next(message);
     }
 }
 ```
 
+This example represents a simple linear chain, where each handler processes the `Car` object in sequence. You can visualize this process in the following diagram:
+
+![Handlers are lined-up](https://refactoring.guru/images/patterns/diagrams/chain-of-responsibility/solution1-en.png)
+
 ### 2. Register the Chain
+
 ```csharp
 builder.Services.AddChain<CarChain>();
 ```
 
 ### 3. Run the Chain
+
 ```csharp
 IChain<Car> chain = app.Services.GetService<IChain<Car>>();
 
@@ -105,7 +80,7 @@ await chain.Run(message);
 
 ### 4. Forking Example
 
-EasyChain allows you to fork the chain into multiple branches and merge them back later:
+`EasyChain` allows you to fork the chain into multiple branches and merge them back later, providing the flexibility to split the handling process into parallel paths. Here's how you can fork your chain:
 
 ```csharp
 class CarChain : IChainConfig<Car>
@@ -124,22 +99,56 @@ class CarChain : IChainConfig<Car>
 }
 ```
 
-In this example:
-- The chain forks after `CarYearHandler` into two branches: one continues with `EngineSizeHandler`, and the other with `CarModelHandler`.
-- After the fork, the branches are merged, and the chain continues with `CarPriceHandler`.
+This example demonstrates a chain that forks into two branches:
+- The first branch processes `EngineSizeHandler`.
+- The second branch processes `CarModelHandler`.
+
+After both branches are processed, the chain merges and continues with `CarPriceHandler`. You can visualize the branching behavior like this:
+
+![Object Tree Branching](https://refactoring.guru/images/patterns/diagrams/chain-of-responsibility/solution2-en.png)
+
+This shows the power of `EasyChain`, which allows you to manage not just linear processing, but complex tree-like workflows, all within a fluent API.
+
+---
 
 ### 5. Building In-Line
 
-You can also build your chain in-line using the `CreateBuilder` method:
+If you prefer to build your chain in-line, `EasyChain` offers an API for that:
 
 ```csharp
-var chain = Chain<object>.CreateBuilder()
-                         .SetNext<TestHandler>()
-                         .SetNext<TestHandler2>()
-                         .Build();
+var chain = Chain<Car>.CreateBuilder()
+                      .SetNext<CarYearHandler>()
+                      .SetNext<CarModelHandler>()
+                      .Build();
 ```
 
-In this example, the chain is configured and built in a single statement, allowing for concise and clear setup.
+This approach allows you to create and configure chains dynamically in a single statement. However, note that it does **not support dependency injection**, and all handler classes must be parameterless.
+
+---
+### 6. Implementing a Handler
+
+To implement a handler in `EasyChain`, your class must implement the `IHandler<T>` interface, where `T` is the type of message the handler will process. Each handler must define the `Handle` method, which takes a message and a reference to the next handler in the chain:
+
+```csharp
+class CarYearHandler : IHandler<Car>
+{
+    public async Task Handle(Car message, ChainHandling<Car> next)
+    {
+        // Process the message (e.g., check car's year)
+        if (message.Year > 2000)
+        {
+            // Pass the message to the next handler in the chain
+            await next(message);
+        }
+    }
+}
+```
+
+In this example:
+- The handler processes a `Car` message.
+- If the car's year is greater than 2000, the message is passed to the next handler.
+  
+Each handler can implement its own logic and decide whether to continue the chain based on conditions.
 
 ## License
 
